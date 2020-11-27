@@ -34,7 +34,6 @@ class FTPClient:
                 data = self.c.recv(1024)
                 if data == b"##":
                     break
-                print(data)
                 f.write(data)
             f.close()
         else:
@@ -49,7 +48,7 @@ class FTPClient:
         # 防止客户端输入的文件名带有路径，切割去除路径获取纯净文件名
         filename = filename.split('/')[-1]
         cmd = 'UL'+filename
-        self.c.send(cmd.decode())
+        self.c.send(cmd.encode())
         data = self.c.recv(128).decode()
         if data =='OK':
             while True:
