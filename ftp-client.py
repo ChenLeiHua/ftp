@@ -1,5 +1,6 @@
 from socket import *
 import sys
+import time
 
 
 ADDR = ("127.0.0.1", 8888)
@@ -39,6 +40,32 @@ class FTPClient:
         else:
             print(data.decode())
 
+    def put_file(self,filename):
+        try:
+            f = open(filename, 'rb')
+        except FileNotFoundError:
+            print("该文件不存在，请检查文件名是否正确")
+            return
+        # 防止客户端输入的文件名带有路径，切割去除路径获取纯净文件名
+        filename = filename.split('/')[-1]
+        cmd = 'UL'+filename
+        self.c.send(cmd.decode())
+        data = self.c.recv(128).decode()
+        if data =='OK':
+            while True:
+                data = f.read(1024)
+                if not data:
+                    time.sleep(0.1)
+                    data = b'##*'
+                    self.c.send(data)
+                    break
+                self.c.send(data)
+            f.close()
+        else:
+            print(data)
+
+
+
 
 def main():
     c = socket()
@@ -63,9 +90,10 @@ def main():
         elif cmd[:3] == 'get':
             filename = cmd.strip(" ").split(" ")[-1]
             ftp.get_file(filename)
-        elif cmd == '3':
-            pass
-        elif cmd == '0':
+        elif cmd[:3] == 'put':
+            filename = cmd.strip(' ').split(' ')[-1]
+            ftp.put_file(filename)
+        elif cmd == 'exit':
             ftp.quit()
             break
         else:

@@ -35,15 +35,31 @@ class FTPServer(Thread):
             return
         else:
             self.client.send(b"OK")
-            time.sleep(1)
+            time.sleep(0.1)
         while True:
             data = f.read(1024)
             if data == b'':
-                time.sleep(1)
+                time.sleep(0.1)
                 self.client.send(b"##")
                 break
             print(data)
             self.client.send(data)
+
+    def put_file(self, filename):
+        if os.path.exists(FTP_DIR+filename):
+            self.client.send("文件已存在".encode())
+        else:
+            self.client.send(b'OK')
+
+        f = open(FTP_DIR+filename, 'wb')
+        while True:
+            data = self.client.recv(1024)
+            if data == b'##*':
+                break
+            f.write(data)
+        f.close()
+
+
 
     def run(self):
         while True:
@@ -57,8 +73,9 @@ class FTPServer(Thread):
             elif data[:2] == 'DL':
                 filename = data[2:]
                 self.send_file(filename)
-            elif data == 'UL':
-                pass
+            elif data[:2] == 'UL':
+                filename = data[2:]
+                self.put_file(filename)
 
 
 def main():
